@@ -26,6 +26,8 @@ fun DeviceScreen(
     state: BluetoothUIState,
     onStartScan: () -> Unit,
     onStopScan: () -> Unit,
+    onDeviceClick: (BluetoothDeviceDomain) -> Unit,
+    onStartServer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -38,7 +40,7 @@ fun DeviceScreen(
             modifier = Modifier.weight(1f),
             pairedDevices = state.pairedDevice,
             scannedDevices = state.scannedDevice,
-            onClick = {}
+            onClick = onDeviceClick
         )
 
         Row(
@@ -54,6 +56,11 @@ fun DeviceScreen(
                 onClick = onStopScan
             ) {
                 Text("Stop Scan")
+            }
+            Button(
+                onClick = onStartServer
+            ) {
+                Text("Start Server")
             }
         }
 
