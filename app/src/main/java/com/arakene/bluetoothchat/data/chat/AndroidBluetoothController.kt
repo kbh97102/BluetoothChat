@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import com.arakene.bluetoothchat.domain.chat.BluetoothController
 import com.arakene.bluetoothchat.domain.chat.BluetoothDeviceDomain
+import com.arakene.bluetoothchat.domain.chat.BluetoothMessage
 import com.arakene.bluetoothchat.domain.chat.ConnectionResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,8 +24,10 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -34,6 +37,10 @@ import java.util.UUID
 class AndroidBluetoothController(
     private val context: Context
 ) : BluetoothController {
+
+    companion object {
+        const val SERVICE_UUID = "4be62338-e699-462a-9862-246f6ea434d3"
+    }
 
     private val _errors = MutableSharedFlow<String>()
     override val errors: SharedFlow<String>
@@ -79,6 +86,7 @@ class AndroidBluetoothController(
 
     private var currentServerSocket: BluetoothServerSocket? = null
     private var currentClientSocket: BluetoothSocket? = null
+    private var bluetoothDataTransferService: BluetoothDataTransferService? = null
 
     init {
         updatePairedDevices()
@@ -139,6 +147,13 @@ class AndroidBluetoothController(
                 currentClientSocket?.let {
                     // server client는 오로지 accept만을 위한것이기에 연결후에는 close해도 client와의 연결에는 지장없음
                     currentServerSocket?.close()
+
+                    val service = BluetoothDataTransferService(it)
+                    bluetoothDataTransferService = service
+
+                    emitAll(service.listenForIncomingMessage().map {
+                        ConnectionResult.TransferSucceeded(it)
+                    })
                 }
 
             }
@@ -161,13 +176,21 @@ class AndroidBluetoothController(
             stopDiscovery()
 
             if (bluetoothAdapter?.bondedDevices?.contains(bluetoothDevice) == false) {
-
+                return@flow
             }
 
             currentClientSocket?.let { socket ->
                 try {
                     socket.connect()
                     emit(ConnectionResult.ConnectionEstablished)
+
+                    BluetoothDataTransferService(socket).also {
+                        bluetoothDataTransferService = it
+                        emitAll(
+                            it.listenForIncomingMessage()
+                                .map { ConnectionResult.TransferSucceeded(it) }
+                        )
+                    }
                 } catch (e: Exception) {
                     socket.close()
                     currentClientSocket = null
@@ -193,6 +216,26 @@ class AndroidBluetoothController(
         closeConnection()
     }
 
+    override suspend fun trySendMessage(message: String): BluetoothMessage? {
+        if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT)){
+            return null
+        }
+
+        if (bluetoothDataTransferService == null) {
+            return null
+        }
+
+        val bluetoothMessage = BluetoothMessage(
+            message = message,
+            senderName = bluetoothAdapter?.name ?: "Unknown Name",
+            isFromLocalUser = true
+        )
+
+        bluetoothDataTransferService?.sendMessage(bluetoothMessage.toByteArray())
+
+        return bluetoothMessage
+    }
+
     private fun updatePairedDevices() {
         if (!hasPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
             return
@@ -209,7 +252,5 @@ class AndroidBluetoothController(
         return context.checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
     }
 
-    companion object {
-        const val SERVICE_UUID = "b4f7c1f8-25f2-4f19-bd42-6f7c58c43a17\n"
-    }
+
 }

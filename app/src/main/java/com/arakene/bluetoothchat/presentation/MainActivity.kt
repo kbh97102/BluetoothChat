@@ -24,6 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.arakene.bluetoothchat.presentation.ui.component.ChatScreen
 import com.arakene.bluetoothchat.presentation.ui.component.DeviceScreen
 import com.arakene.bluetoothchat.presentation.ui.theme.BluetoothChatTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -53,23 +54,22 @@ class MainActivity : ComponentActivity() {
         val permissionLauncher = registerForActivityResult(
             contract = ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
-            val canEnableBluetooth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val canEnableBluetooth =
                 permissions[Manifest.permission.BLUETOOTH_CONNECT] == true
-            } else true
 
             if (canEnableBluetooth && !isBluetoothEnabled) {
                 enableBluetoothLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            permissionLauncher.launch(
-                arrayOf(
-                    Manifest.permission.BLUETOOTH_CONNECT,
-                    Manifest.permission.BLUETOOTH_SCAN,
-                )
+        permissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
             )
-        }
+        )
 
         setContent {
             BluetoothChatTheme {
@@ -103,6 +103,14 @@ class MainActivity : ComponentActivity() {
                                 CircularProgressIndicator()
                                 Text("is Connecting....")
                             }
+                        }
+
+                        state.isConnected -> {
+                            ChatScreen(
+                                state = state,
+                                onDisconnect = viewModel::disconnectFromDevice,
+                                onSendMessage = viewModel::sendMessage
+                            )
                         }
 
                         else -> {
