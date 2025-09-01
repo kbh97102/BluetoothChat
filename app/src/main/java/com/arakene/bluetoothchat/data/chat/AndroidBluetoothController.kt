@@ -175,9 +175,9 @@ class AndroidBluetoothController(
             )
             stopDiscovery()
 
-            if (bluetoothAdapter?.bondedDevices?.contains(bluetoothDevice) == false) {
-                return@flow
-            }
+//            if (bluetoothAdapter?.bondedDevices?.contains(bluetoothDevice) == false) {
+//                return@flow
+//            }
 
             currentClientSocket?.let { socket ->
                 try {

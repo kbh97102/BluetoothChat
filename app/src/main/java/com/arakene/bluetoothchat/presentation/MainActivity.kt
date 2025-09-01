@@ -47,6 +47,24 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        val requestDiscoverableLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == RESULT_CANCELED) {
+                    // 사용자가 검색 허용을 거부함
+                    Toast.makeText(this, "Discoverability was not enabled.", Toast.LENGTH_SHORT).show()
+                } else {
+                    // 사용자가 허용함. resultCode는 허용된 시간(초)입니다.
+                    Toast.makeText(this, "Discoverability enabled for ${result.resultCode} seconds.", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+        val discoverableIntent = Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).apply {
+            // 기본값은 120초입니다. 최대 300초(5분)까지 설정 가능합니다.
+            putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300)
+        }
+        requestDiscoverableLauncher.launch(discoverableIntent)
+
+
         val enableBluetoothLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { /* Not needed */ }
