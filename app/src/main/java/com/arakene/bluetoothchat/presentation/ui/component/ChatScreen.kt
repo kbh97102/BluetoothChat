@@ -33,7 +33,7 @@ fun ChatScreen(
     modifier: Modifier = Modifier
 ) {
 
-    val (message, onMessageChanged) = rememberSaveable {
+    val (message, onMessageChanged) = rememberSaveable(stateSaver = TextFieldValue.Saver) {
         mutableStateOf(TextFieldValue())
     }
 
