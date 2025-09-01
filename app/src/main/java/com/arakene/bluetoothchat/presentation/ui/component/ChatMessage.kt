@@ -1,5 +1,6 @@
 package com.arakene.bluetoothchat.presentation.ui.component
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -20,6 +22,11 @@ fun ChatMessage(
     message: BluetoothMessage,
     modifier: Modifier = Modifier
 ) {
+
+    LaunchedEffect(message) {
+        Log.e(">>>>", "Message ${message.message} name ${message.senderName} from local? ${message.isFromLocalUser}")
+    }
+
     Column(
         modifier = modifier
             .clip(
@@ -46,7 +53,19 @@ fun ChatMessage(
 
 @Preview
 @Composable
-private fun ChatMessagePreview() {
+private fun FromAnotherUser() {
+    ChatMessage(
+        message = BluetoothMessage(
+            message = "Test Message",
+            senderName = "s25 ultra",
+            isFromLocalUser = false
+        )
+    )
+}
+
+@Preview
+@Composable
+private fun FromLocalUser() {
     ChatMessage(
         message = BluetoothMessage(
             message = "Test Message",

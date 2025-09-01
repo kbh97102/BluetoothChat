@@ -3,8 +3,8 @@ package com.arakene.bluetoothchat.data.chat
 import com.arakene.bluetoothchat.domain.chat.BluetoothMessage
 
 fun String.toBluetoothMessage(isFromLocalUse: Boolean): BluetoothMessage {
-    val message = substringBeforeLast("#")
-    val senderName = substringAfter("#")
+    val senderName = substringBeforeLast("#")
+    val message = substringAfter("#")
     return BluetoothMessage(
         isFromLocalUser = isFromLocalUse,
         message = message,
